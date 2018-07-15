@@ -1,0 +1,136 @@
+resource_types:
+- name: copr
+  type: docker-image
+  source:
+    repository: quay.io/ahoi/concourse-copr-resource
+
+resources:
+- name: container-fedora
+  type: docker-image
+  source:
+    repository: quay.io/ratpoison/oregano-test-fedora
+    username: {{quay-username}}
+    password: {{quay-password}}
+
+- name: git-ci-resource
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/drahnr/wondershaper-rpm
+
+- name: git-wondershaper-resource
+  type: git
+  source:
+    branch: master
+    uri: https://github.com//wondershaper
+
+
+- name: copr-resource
+  type: copr
+  source:
+    login: {{copr-login}}
+    token: {{copr-token}}
+    url: {{copr-url}}
+
+- name: rpm-release
+  type: s3
+  source:
+    endpoint: https://minio.spearow.io
+    bucket: wondershaper
+    regexp: wondershaper(.*).rpm
+    access_key_id: {{minio-access-key}}
+    secret_access_key: {{minio-secret-key}}
+
+jobs:
+  - name: build-pkg-rpm
+    public: true
+    build_logs_to_retain: 3
+    plan:
+    - get: container-fedora
+      trigger: true 
+    - get: spec
+      resource: git-ci-resource
+      trigger: true
+    - get: source
+      resource: git-wondershaper-resource
+    - task: create-rpm
+      timeout: 30m
+      image: container-fedora
+      config:
+        platform: linux
+        inputs:
+        - name: spec
+        - name: source
+        outputs:
+        - name: srpm
+        - name: rpm
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            
+            REFERENCE_DIR=$(pwd)
+            GIT_REPO_DIR="${REFERENCE_DIR}/source"
+            
+            cd ${GIT_REPO_DIR}
+            COMMIT_SHA=$(git rev-parse HEAD)
+            cd -
+            
+            NAME="wondershaper"
+            NAME_LOWERCASE="$(echo ${NAME} | tr '[:upper:]' '[:lower:]' )"
+                        
+            SPEC_SOURCE_DIR="${REFERENCE_DIR}/spec"
+            OUTPUT_RPM_DIR="${REFERENCE_DIR}/rpm"
+            OUTPUT_SRPM_DIR="${REFERENCE_DIR}/srpm"
+            
+            pwd 2>&1
+            RPMBUILD_DIR="${REFERENCE_DIR}/rpmbuild"
+            
+            mkdir -p "${RPMBUILD_DIR}/"{SOURCES,BUILD,RPMS,SRPMS,SPECS}
+            #content is not the way github would format it
+            #cp -v release/source.tar.gz "${RPMBUILD_DIR}/SOURCES/v${VERSION}.tar.gz"            
+            
+            cp -v "${SPEC_SOURCE_DIR}/${NAME_LOWERCASE}.spec" "${RPMBUILD_DIR}/SPECS"
+            
+            cd "${GIT_REPO_DIR}"
+            echo "Using ${COMMIT_SHA}"
+            git archive --format=tar --prefix="${COMMIT_SHA}/" HEAD | gzip > "${COMMIT_SHA}.tar.gz"
+            cd -
+
+            cp -v "${GIT_REPO_DIR}/${COMMIT_SHA}.tar.gz" "${RPMBUILD_DIR}/SOURCES"
+                                       
+            cd "${RPMBUILD_DIR}"
+
+            dnf install -y 'dnf-command(builddep)'
+            dnf builddep -y "SPECS/${NAME_LOWERCASE}.spec"
+            
+            rpmbuild \
+            --define "_topdir ${RPMBUILD_DIR}" \
+            --define "_builddir %{_topdir}/BUILD" \
+            --define "_rpmdir %{_topdir}/RPMS" \
+            --define "_srcrpmdir %{_topdir}/SRPMS" \
+            --define "_specdir %{_topdir}/SPECS" \
+            --define "_sourcedir  %{_topdir}/SOURCES" \
+            -ba "SPECS/${NAME_LOWERCASE}.spec" || exit 1
+            
+            mkdir -p "${OUTPUT_RPM_DIR}" "${OUTPUT_SRPM_DIR}"
+            rm -vf ${RPMBUILD_DIR}/RPMS/x86_64/${NAME_LOWERCASE}-*debug*.rpm
+            cp -vf ${RPMBUILD_DIR}/RPMS/x86_64/${NAME_LOWERCASE}-*.rpm "${OUTPUT_RPM_DIR}"
+            cp -vf ${RPMBUILD_DIR}/SRPMS/${NAME_LOWERCASE}-*.src.rpm "${OUTPUT_SRPM_DIR}"
+
+    - put: rpm-release
+      params:
+        file: rpm/wondershaper*.rpm
+        acl: public-read
+
+    - put: copr
+      resource: copr-resource
+      params:
+        rpmbuild_dir: "srpm"
+        chroots: ["fedora-rawhide-x86_64", "fedora-28-x86_64", "fedora-27-x86_64", "fedora-26-x86_64"]
+        enable_net: false
+        max_n_bytes: 250000000
+        project_id: 18368
+        regex: ".*wondershaper-.*\\.src\\.rpm$"
+      
