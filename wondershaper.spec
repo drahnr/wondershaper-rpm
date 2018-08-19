@@ -28,7 +28,7 @@ continue using SSH over a loaded link happily.
 # nothing
 
 %install
-install -pDm 755 %{name} %{buildroot}/%{_sbindir}/%{name}
+install -pDm 755 %{name} %{buildroot}/%{_bindir}/%{name}
 install -pDm 644 %{name}.service %{buildroot}/%{_unitdir}/%{name}.service
 install -pDm 644 %{name}.conf %{buildroot}/%{_sysconfdir}/conf.d/%{name}.conf
 
@@ -44,7 +44,7 @@ install -pDm 644 %{name}.conf %{buildroot}/%{_sysconfdir}/conf.d/%{name}.conf
 %files
 %doc ChangeLog README.md
 %license COPYING
-%{_sbindir}/%{name}
+%{_bindir}/%{name}
 %{_unitdir}/%{name}.service
 %config %{_sysconfdir}/conf.d/%{name}.conf
 
