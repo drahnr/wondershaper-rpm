@@ -106,6 +106,7 @@ jobs:
             dnf builddep -y "SPECS/${NAME_LOWERCASE}.spec"
             
             rpmbuild \
+            --define "COMMIT_SHA ${COMMIT_SHA}" \
             --define "_topdir ${RPMBUILD_DIR}" \
             --define "_builddir %{_topdir}/BUILD" \
             --define "_rpmdir %{_topdir}/RPMS" \

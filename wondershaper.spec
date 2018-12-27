@@ -1,12 +1,11 @@
-%define commitsha 6b6c5109ba2679148a63d0f168e9464de8b04227
 Name:		wondershaper
 Version:	1.4.0
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Simple Network Shaper
 Group:		Applications/Internet
 License:	GPLv2+
 URL:		https://github.com/magnific0/wondershaper
-Source:		https://github.com/magnific0/wondershaper/archive/%{commitsha}.tar.gz
+Source:		https://github.com/magnific0/wondershaper/archive/%{COMMIT_SHA}.tar.gz
 
 Requires:	iproute
 Requires:	kernel-modules-extra
@@ -22,7 +21,7 @@ these issues, allowing users of a router with a Wondershaper to
 continue using SSH over a loaded link happily.
 
 %prep
-%setup -q -n %{name}-%{commitsha}
+%setup -q -n %{name}-%{COMMIT_SHA}
 
 %build
 # nothing
@@ -49,6 +48,9 @@ install -pDm 644 %{name}.conf %{buildroot}/%{_sysconfdir}/conf.d/%{name}.conf
 %config %{_sysconfdir}/conf.d/%{name}.conf
 
 %changelog
+* Thu Dec 27 2018 Bernhard Schuster - 1.4.0-2
+- Require COMMITSHA to be passed from command line
+
 * Sun Jul 15 2018 Bernhard Schuster - 1.4.0-1
 - Change of upstream
 
