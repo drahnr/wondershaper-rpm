@@ -1,11 +1,12 @@
 Name:		wondershaper
 Version:	1.4.0
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	Simple Network Shaper
 Group:		Applications/Internet
 License:	GPLv2+
 URL:		https://github.com/magnific0/wondershaper
-Source:		https://github.com/magnific0/wondershaper/archive/%{COMMIT_SHA}.tar.gz
+Source0:	https://github.com/magnific0/wondershaper/archive/%{COMMIT_SHA}.tar.gz
+Source1:	wondershaper.service
 
 Requires:	iproute
 Requires:	kernel-modules-extra
@@ -28,7 +29,8 @@ continue using SSH over a loaded link happily.
 
 %install
 install -pDm 755 %{name} %{buildroot}/%{_bindir}/%{name}
-install -pDm 644 %{name}.service %{buildroot}/%{_unitdir}/%{name}.service
+rm %{name}.service
+install -pDm 644 %{Source1}.service %{buildroot}/%{_unitdir}/%{name}.service
 install -pDm 644 %{name}.conf %{buildroot}/%{_sysconfdir}/conf.d/%{name}.conf
 
 %post
@@ -48,6 +50,9 @@ install -pDm 644 %{name}.conf %{buildroot}/%{_sysconfdir}/conf.d/%{name}.conf
 %config %{_sysconfdir}/conf.d/%{name}.conf
 
 %changelog
+* Fri Mar 27 2020 Bernhard Schuster - 1.4.0-3
+- Assure systemd service file does handle rate updates in the config file
+
 * Thu Dec 27 2018 Bernhard Schuster - 1.4.0-2
 - Require COMMITSHA to be passed from command line
 
