@@ -98,7 +98,10 @@ jobs:
             git archive --format=tar --prefix="${NAME_LOWERCASE}-${COMMIT_SHA}/" HEAD | gzip > "${COMMIT_SHA}.tar.gz"
             cd -
 
+            # Source0
             cp -v "${GIT_REPO_DIR}/${COMMIT_SHA}.tar.gz" "${RPMBUILD_DIR}/SOURCES"
+            # Source1
+            cp -v "${SPEC_SOURCE_DIR}/${NAME_LOWERCASE}.service" "${RPMBUILD_DIR}/SOURCES"
                                        
             cd "${RPMBUILD_DIR}"
 
