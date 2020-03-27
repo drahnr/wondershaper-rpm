@@ -1,3 +1,5 @@
+%{!?COMMIT_SHA: %define COMMIT_SHA 5e8359464938163f2a308710c3f489e2e5d9a7c8}
+
 Name:		wondershaper
 Version:	1.4.0
 Release:	3%{?dist}
@@ -30,7 +32,7 @@ continue using SSH over a loaded link happily.
 %install
 install -pDm 755 %{name} %{buildroot}/%{_bindir}/%{name}
 rm %{name}.service
-install -pDm 644 %{Source1}.service %{buildroot}/%{_unitdir}/%{name}.service
+install -pDm 644 %{SOURCE1} %{buildroot}/%{_unitdir}/%{name}.service
 install -pDm 644 %{name}.conf %{buildroot}/%{_sysconfdir}/conf.d/%{name}.conf
 
 %post
